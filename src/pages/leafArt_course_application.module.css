@@ -1,0 +1,74 @@
+/* leafArt_course_application.module.css */
+.container {
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 2rem;
+  background: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.title {
+  text-align: center;
+  font-size: 1.8rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+.steps {
+  text-align: center;
+  color: #666;
+  font-size: 0.9rem;
+  margin-bottom: 2rem;
+}
+
+.stepTitle {
+  border-left: 4px solid #8FBC8F;
+  padding-left: 8px;
+  margin-top: 2rem;
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+}
+
+.calendarWrapper {
+  width: 360px;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.inputField {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  margin-bottom: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 0.375rem;
+  font-size: 1rem;
+}
+
+/* ✅ 正确写法，只保留一次 submitButton */
+.submitButton {
+  width: 100%;
+  background-color: #8FBC8F;
+  color: white;
+  font-size: 1rem;
+  font-weight: bold;
+  padding: 0.6rem 0.75rem;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: block !important;
+}
+
+.submitButton:hover {
+  background-color: #6fa36f;
+}
+
+/* ✅ 全局兜底，防止其他 button 被隐藏 */
+button {
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: block !important;
+}
