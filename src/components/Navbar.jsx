@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
+import { useCart } from '../context/CartContext';
 import logoWhite from '../assets/images/logo-white.png';
 import logoBlack from '../assets/images/logo-black.png';
 
 export default function Navbar() {
   const { user } = useUser();
+  const { cartItems } = useCart();
   const location = useLocation();
   const isHome = location.pathname === '/';
   const [scrolled, setScrolled] = useState(false);
@@ -41,9 +43,28 @@ export default function Navbar() {
       </Link>
 
       {/* Right side */}
-      <div className="space-x-4">
+      <div className="space-x-4 flex items-center">
+        {/* 只在已登录时显示购物车 */}
+        {user && (
+          <Link
+            to="/cart"
+            className={`relative px-4 py-1 rounded-full transition ${
+              isTransparent
+                ? 'text-white hover:text-lime-300'
+                : 'text-lime-600 hover:bg-lime-100'
+            }`}
+          >
+            カート
+            {cartItems && cartItems.length > 0 && (
+              <span className="absolute -top-2 -right-2 bg-lime-500 text-white text-xs rounded-full px-2">
+                {cartItems.length}
+              </span>
+            )}
+          </Link>
+        )}
+
         {user ? (
-          <span className={`${isTransparent ? 'text-white' : 'text-gray-600'}`}>
+          <span className={isTransparent ? 'text-white' : 'text-gray-600'}>
             ようこそ{' '}
             <Link
               to="/profile"
@@ -68,17 +89,16 @@ export default function Navbar() {
             >
               ログイン
             </Link>
-<Link
-  to="/register"
-  className={`text-xs px-4 py-1 rounded-full transition ${
-    isTransparent
-      ? 'text-white hover:text-lime-300'
-      : 'text-lime-600 hover:bg-lime-100'
-  }`}
->
-  サインアップ
-</Link>
-
+            <Link
+              to="/register"
+              className={`text-xs px-4 py-1 rounded-full transition ${
+                isTransparent
+                  ? 'text-white hover:text-lime-300'
+                  : 'text-lime-600 hover:bg-lime-100'
+              }`}
+            >
+              サインアップ
+            </Link>
           </>
         )}
       </div>

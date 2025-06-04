@@ -29,7 +29,7 @@ export default function Register() {
 
     try {
       const { name, email, password } = formData;
-      const res = await axios.post('/register', { name, email, password });
+      const res = await axios.post('/users/register', { name, email, password });
       console.log('✅ 登録成功：', res.data);
 
       alert('登録に成功しました。ログインしてください。');

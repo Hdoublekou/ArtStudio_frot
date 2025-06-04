@@ -1,14 +1,55 @@
 // src/pages/Cart.jsx
 import { useCart } from '../context/CartContext';
+import { useUser } from '../context/UserContext';
+import axios from '../api/axiosInstance';
+import { useState } from 'react';
 
 export default function Cart() {
-  // 购物车操作
   const { cartItems, updateQuantity, removeFromCart, clearCart } = useCart();
+  const { user } = useUser();
+  const [loading, setLoading] = useState(false);
 
-  // 合计金额
-  const total = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+const total = cartItems.reduce((sum, item) => {
+  const price = Number(item.price) || 0;
+  const quantity = Number(item.quantity) || 0;
+  return sum + price * quantity;
+}, 0);
 
-  // 购物车为空时
+  // 下单&支付
+  const handleCheckout = async () => {
+    if (!user) {
+      alert('请先登录');
+      return;
+    }
+    if (cartItems.length === 0) {
+      alert('カートが空です');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // 支持一次下多单，逐一调用下单API
+// 下单
+for (const item of cartItems) {
+  const price = Number(item.price) || 0;
+  const quantity = Number(item.quantity) || 0;
+  await axios.post('/orders/create', {
+    userId: user.id,
+    workId: item.productId,
+    totalPrice: (price * quantity).toString()
+  });
+}
+      alert('下单成功！');
+      clearCart();
+    } catch (e) {
+      alert('下单失败');
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!cartItems || cartItems.length === 0) {
     return (
       <div className="p-8 text-center text-gray-600">
@@ -51,6 +92,16 @@ export default function Cart() {
           className="bg-gray-300 text-gray-700 px-6 py-2 rounded hover:bg-gray-400 transition"
         >
           カートを空にする
+        </button>
+      </div>
+      {/* 新增支付按钮 */}
+      <div className="mt-6 flex justify-end">
+        <button
+          onClick={handleCheckout}
+          className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 transition"
+          disabled={loading}
+        >
+          {loading ? "注文処理中..." : "注文確定・下单"}
         </button>
       </div>
     </div>

@@ -6,6 +6,9 @@ import ArtworkUploader from '../components/ArtworkUploader';
 import defaultAvatar from '../assets/images/default-avatar.png';
 import axios from '../api/axiosInstance';
 import { STATIC_BASE_URL } from '../api/config';
+import OrderHistory from '../components/OrderHistory'; 
+import AddressBook from "../components/AddressBook";
+
 
 export default function Profile() {
     const { user, logout } = useUser();
@@ -15,6 +18,7 @@ export default function Profile() {
     const [avatarFile, setAvatarFile] = useState(null);
     const [uploaded, setUploaded] = useState(false);
     const [works, setWorks] = useState([]);
+    const [favorites, setFavorites] = useState([]);
 
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
@@ -31,8 +35,52 @@ export default function Profile() {
         }
     };
 
+    // 读取收藏
+    const fetchFavorites = async () => {
+        if (!user) return;
+        try {
+            const res = await axios.get(`/favorites/user/${user.id}`);
+            setFavorites(res.data); // 约定为作品数组
+        } catch (err) {
+            console.error('お気に入り取得エラー:', err);
+        }
+    };
+
+    // 删除作品
+    const handleDeleteWork = async (workId) => {
+        if (!window.confirm('この作品を本当に削除しますか？')) return;
+        try {
+            await axios.delete(`/works/${workId}`);
+            setWorks(works.filter(work => work.id !== workId));
+        } catch (err) {
+            alert('作品削除に失敗しました');
+            console.error(err);
+        }
+    };
+
+    // 点赞/取消点赞
+    const toggleFavorite = async (work) => {
+        try {
+            if (work.isFavorite) {
+                // 取消
+                await axios.delete(`/favorites`, { data: { userId: user.id, workId: work.id } });
+            } else {
+                // 点赞
+                await axios.post(`/favorites`, { userId: user.id, workId: work.id });
+            }
+            fetchFavorites(); // 更新收藏列表
+            fetchWorks(); // 刷新作品（如作品内有favorite count/isFavorite标识）
+        } catch (err) {
+            alert('お気に入り処理に失敗しました');
+            console.error(err);
+        }
+    };
+
     useEffect(() => {
-        if (user) fetchWorks();
+        if (user) {
+            fetchWorks();
+            fetchFavorites();
+        }
     }, [user]);
 
     if (!user) {
@@ -125,26 +173,35 @@ export default function Profile() {
                             <p className="text-sm text-gray-500">プロフィール設定</p>
                         </div>
                     </div>
-                    <nav className="text-sm space-y-2 text-gray-700">
-                        <div className="font-bold">一般</div>
-                        <ul className="space-y-1">
-                            <li onClick={() => setActiveTab('profile')} className={`cursor-pointer ${activeTab === 'profile' ? 'text-lime-600 font-semibold' : 'hover:text-lime-600'}`}>プロフィール</li>
-                            <li onClick={() => setActiveTab('password')} className={`cursor-pointer ${activeTab === 'password' ? 'text-lime-600 font-semibold' : 'hover:text-lime-600'}`}>パスワード</li>
-                            <li onClick={() => setActiveTab('notification')} className={`cursor-pointer ${activeTab === 'notification' ? 'text-lime-600 font-semibold' : 'hover:text-lime-600'}`}>通知設定</li>
-                            <li onClick={() => setActiveTab('upload')} className={`cursor-pointer ${activeTab === 'upload' ? 'text-lime-600 font-semibold' : 'hover:text-lime-600'}`}>作品アップロード</li>
+<nav className="text-sm space-y-2 text-gray-700">
+    <div className="font-bold">一般</div>
+    <ul className="space-y-1">
+        <li onClick={() => setActiveTab('profile')} className={`cursor-pointer ${activeTab === 'profile' ? 'text-lime-600 font-semibold' : 'hover:text-lime-600'}`}>プロフィール</li>
+        <li onClick={() => setActiveTab('password')} className={`cursor-pointer ${activeTab === 'password' ? 'text-lime-600 font-semibold' : 'hover:text-lime-600'}`}>パスワード</li>
+        <li onClick={() => setActiveTab('notification')} className={`cursor-pointer ${activeTab === 'notification' ? 'text-lime-600 font-semibold' : 'hover:text-lime-600'}`}>通知設定</li>
+        <li
+          onClick={() => setActiveTab("address")}
+          className={`cursor-pointer ${activeTab === "address" ? "text-lime-600 font-semibold" : "hover:text-lime-600"}`}
+        >
+          お届け先情報
+        </li>
+        <li onClick={() => setActiveTab('upload')} className={`cursor-pointer ${activeTab === 'upload' ? 'text-lime-600 font-semibold' : 'hover:text-lime-600'}`}>作品アップロード</li>
+        <li onClick={() => setActiveTab('cart')} className={`cursor-pointer ${activeTab === 'cart' ? 'text-lime-600 font-semibold' : 'hover:text-lime-600'}`}>カート</li>
+        <li onClick={() => setActiveTab('favorites')} className={`cursor-pointer ${activeTab === 'favorites' ? 'text-lime-600 font-semibold' : 'hover:text-lime-600'}`}>お気に入り</li>
+        <li onClick={() => setActiveTab('orders')} className={`cursor-pointer ${activeTab === 'orders' ? 'text-lime-600 font-semibold' : 'hover:text-lime-600'}`}>注文履歴</li>
+        {/* 只允许 店铺/管理者 显示商品管理 */}
+        {(user.role === 'shop' || user.role === 'admin') && (
+          <li onClick={() => navigate('/my-products')} className="cursor-pointer hover:text-lime-600">商品管理</li>
+        )}
+        <li onClick={handleDeleteAccount} className="text-rose-500 hover:underline cursor-pointer">アカウント削除</li>
+    </ul>
+</nav>
 
-                            {/* ✅ 新增购物相关 */}
-                            <li onClick={() => setActiveTab('cart')} className={`cursor-pointer ${activeTab === 'cart' ? 'text-lime-600 font-semibold' : 'hover:text-lime-600'}`}>カート</li>
-                            <li onClick={() => setActiveTab('favorites')} className={`cursor-pointer ${activeTab === 'favorites' ? 'text-lime-600 font-semibold' : 'hover:text-lime-600'}`}>お気に入り</li>
-                            <li onClick={() => setActiveTab('orders')} className={`cursor-pointer ${activeTab === 'orders' ? 'text-lime-600 font-semibold' : 'hover:text-lime-600'}`}>注文履歴</li>
-
-                            <li onClick={handleDeleteAccount} className="text-rose-500 hover:underline cursor-pointer">アカウント削除</li>
-                        </ul>
-                    </nav>
                 </aside>
 
                 {/* 右侧内容 */}
                 <section className="flex-1 space-y-6">
+                    {/* プロフィール设置 */}
                     {activeTab === 'profile' && (
                         <>
                             <div>
@@ -167,6 +224,7 @@ export default function Profile() {
                         </>
                     )}
 
+                    {/* 作品上传/我的作品 */}
                     {activeTab === 'upload' && (
                         <div className="space-y-6">
                             <div className="mt-10">
@@ -180,18 +238,34 @@ export default function Profile() {
                                         ▶ アップロード済み作品ページへ
                                     </button>
                                 </div>
-
                             </div>
 
                             <div className="mt-10">
                                 <h3 className="text-sm font-medium text-gray-700 mb-4">アップロード済み作品</h3>
                                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                                     {works.map(work => (
-                                        <div key={work.id} className="border rounded shadow-sm overflow-hidden">
+                                        <div key={work.id} className="border rounded shadow-sm overflow-hidden relative group">
                                             <img src={`${STATIC_BASE_URL}${work.imageUrl}`} alt={work.title} className="w-full h-40 object-cover" />
                                             <div className="p-2">
                                                 <h4 className="text-sm font-semibold">{work.title}</h4>
                                                 {work.description && <p className="text-xs text-gray-500">{work.description}</p>}
+                                                <div className="flex items-center gap-2 mt-2">
+                                                    {/* 喜欢按钮 */}
+                                                    <button
+                                                        className={`text-xs flex items-center gap-1 px-2 py-1 rounded ${work.isFavorite ? 'bg-lime-100 text-lime-600' : 'hover:bg-gray-100'}`}
+                                                        onClick={() => toggleFavorite(work)}
+                                                    >
+                                                        <span className="material-icons" style={{ fontSize: '18px' }}>{work.isFavorite ? "favorite" : "favorite_border"}</span>
+                                                        {work.favoriteCount || 0}
+                                                    </button>
+                                                    {/* 删除按钮（仅自己作品） */}
+                                                    <button
+                                                        className="text-xs text-rose-500 hover:underline ml-2"
+                                                        onClick={() => handleDeleteWork(work.id)}
+                                                    >
+                                                        削除
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     ))}
@@ -200,6 +274,7 @@ export default function Profile() {
                         </div>
                     )}
 
+                    {/* パスワード */}
                     {activeTab === 'password' && (
                         <div className="space-y-4">
                             <div>
@@ -220,13 +295,14 @@ export default function Profile() {
                         </div>
                     )}
 
+                    {/* 通知设置 */}
                     {activeTab === 'notification' && (
                         <div className="text-sm text-gray-500">
                             通知設定機能は現在準備中です。
                         </div>
                     )}
 
-                    {/* ✅ 新增购物相关页面 */}
+                    {/* 购物车/收藏/订单 */}
                     {activeTab === 'cart' && (
                         <div className="text-sm text-gray-500">
                             <h3 className="text-lg font-semibold mb-4">カート</h3>
@@ -234,19 +310,42 @@ export default function Profile() {
                         </div>
                     )}
 
+                    {/* 收藏页面 */}
                     {activeTab === 'favorites' && (
                         <div className="text-sm text-gray-500">
                             <h3 className="text-lg font-semibold mb-4">お気に入り</h3>
-                            <p>ここにお気に入りリストを表示</p>
+                            {favorites.length === 0 ? (
+                                <p>まだお気に入り作品がありません。</p>
+                            ) : (
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                    {favorites.map(work => (
+                                        <div key={work.id} className="border rounded shadow-sm overflow-hidden">
+                                            <img src={`${STATIC_BASE_URL}${work.imageUrl}`} alt={work.title} className="w-full h-40 object-cover" />
+                                            <div className="p-2">
+                                                <h4 className="text-sm font-semibold">{work.title}</h4>
+                                                <div className="flex items-center gap-2 mt-2">
+                                                    <span className="text-lime-600 material-icons" style={{ fontSize: '18px' }}>favorite</span>
+                                                    {work.favoriteCount || 0}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     )}
 
-                    {activeTab === 'orders' && (
-                        <div className="text-sm text-gray-500">
-                            <h3 className="text-lg font-semibold mb-4">注文履歴</h3>
-                            <p>ここに注文履歴を表示</p>
-                        </div>
-                    )}
+{activeTab === 'orders' && (
+  <div className="text-sm text-gray-700">
+    <OrderHistory userId={user.id} />
+  </div>
+)}
+
+{activeTab === "address" && (
+  <div className="text-sm text-gray-700">
+    <AddressBook userId={user.id} />
+  </div>
+)}
                 </section>
             </div>
         </div>
